@@ -58,7 +58,7 @@ def get_all_files_in_dir(d, suffix=""):
 
 
 def dl(url, directory, suffix):
-    subprocess.check_call(["./save_page_as", url, "--destination", directory, "--suffix", suffix, "--load-wait-time", "8", "--save-wait-time", "8"])
+    subprocess.check_call(["./automate-save-page-as/save_page_as", url, "--destination", directory, "--suffix", suffix, "--load-wait-time", "8", "--save-wait-time", "8"])
 
 
 def recursive_download(url, directory, cmm):
