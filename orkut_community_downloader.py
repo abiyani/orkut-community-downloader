@@ -2,8 +2,8 @@
 
 from optparse import OptionParser
 import os
-import shutil
 from os.path import join as pjoin
+import shutil
 import sys
 import re
 import hashlib
@@ -11,9 +11,6 @@ import collections
 import tempfile
 import subprocess
 
-
-def read_file(f):
-    return open(f, 'r').read()
 
 next_link_log_file = None
 prev_link_log_file = None
@@ -46,6 +43,10 @@ class LogFileCached():
     def __iter__(self):
         for k in self.data:
             yield k
+
+
+def read_file(f):
+    return open(f, 'r').read()
 
 
 def ensure_directory(d):
@@ -146,22 +147,22 @@ def symlink_common_files(bdir):
             full_path = pjoin(root, f)
             if os.path.islink(full_path):
                 continue
-            md5_to_files[fileMD5(full_path)].append(full_path)
+            md5_to_files[fileMD5(full_path)].append(os.path.abspath(full_path))
 
     common_files_dir = pjoin(bdir, "common_file_dir")
     ensure_directory(common_files_dir)
-    for uniq_hash, files in md5_to_files.items():
-        if len(md5_to_files[uniq_hash]) == 1:
+    for files in md5_to_files.itervalues():
+        if len(files) == 1:
             continue
         common_file_name = pjoin(common_files_dir, os.path.basename(files[0]))
         if os.path.isfile(common_file_name):
             # If the file with same name already exists, generate a random (but unique) name
-            handle, commmon_file_name = tempfile.mkstemp(dir=common_files_dir)
+            handle, common_file_name = tempfile.mkstemp(dir=common_files_dir)
             os.close(handle)
 
-        shutil.copyfile(files[0], common_file_name)
+        shutil.copy(files[0], common_file_name)
         for f in files:
-            sys.stderr.write("\t - Removing file '{}' (will symlink to: '{}'\n".format(f, common_file_name))
+            sys.stderr.write("\t - Removing file '{}' (will symlink to: '{}')\n".format(f, common_file_name))
             os.remove(f)
             os.symlink(os.path.relpath(common_file_name, os.path.dirname(f)), f)
 
