@@ -10,6 +10,15 @@ import hashlib
 import collections
 import tempfile
 import subprocess
+try:
+    from unidecode import unidecode
+    transliterate = lambda s: unidecode(unicode(s, 'utf-8')).encode('ascii', 'ignore')
+except ImportError:
+    sys.stderr.write("INFO: Unable to find package 'unidecode'. If you want better " +
+                     "handling of non-ascii characters, please consider installing it " +
+                     "(https://pypi.python.org/pypi/Unidecode). Will use 'unicodedata' for now.\n\n")
+    import unicodedata
+    transliterate = lambda s: unicodedata.normalize('NFKD', unicode(s, 'utf-8')).encode('ascii', 'ignore')
 
 
 next_link_log_file = None
@@ -59,7 +68,7 @@ def get_all_files_in_dir(d, suffix=""):
 
 
 def dl(url, directory, suffix):
-    subprocess.check_call(["./automate-save-page-as/save_page_as", url, "--destination", directory, "--suffix", suffix, "--load-wait-time", "8", "--save-wait-time", "8"])
+    subprocess.check_call(["./automate-save-page-as/save_page_as", url, "--destination", directory, "--suffix", suffix, "--load-wait-time", str(dl.load_wait_time), "--save-wait-time", str(dl.save_wait_time)])
 
 
 def recursive_download(url, directory, cmm):
@@ -111,8 +120,13 @@ def recursive_download(url, directory, cmm):
 # Make directory name safe for windows
 def cleanup_dir_name(dname):
     unsafe_chars = '<>:"\\/|?*'
-    safe_dname = ''.join([c for c in dname.strip() if c not in unsafe_chars])
-    return ' '.join(safe_dname.split())  # Replace multiple spaces by single space, and remove trailing space
+
+    to_return = ' '.join(''.join([c for c in transliterate(dname).strip() if c not in unsafe_chars]).split())
+    if len(to_return) == 0:
+        # If there were no "safe" characters in the name, just use md5 hash - opaque, but at least unique.
+        return hashlib.md5(dname).hexdigest()
+    else:
+        return to_return
 
 
 def replace_url_with_local_paths(start_directory):
@@ -173,15 +187,23 @@ def parse_and_validate_args():
     parser.add_option("-i", "--community-id", dest="cmm", type="int",
                       help="ID of the community, e.g., If URL of the community homepage is http://www.orkut.com/Main#Community?cmm=125, then community-id is '125'")
     parser.add_option("-d", "--dest-dir", dest="dest_dir", type="string",
-                      help="Will store all files inside this directory"),
+                      help="Will store all files inside this directory")
     parser.add_option("-s", "--symlink-common-files", dest="symlink", action="store_true", default=False,
                       help="If provided, all common files across all '*_files' directories will be copied to a common directory, and " +
-                           "all version will be replaced with a symlink to this location. Useful for saving space.")
+                           "all version will be replaced with a symlink to this location. Useful for saving space. " +
+                           "Note: Do not use this option if you intend to use the dump on Windows.")
+    parser.add_option("--load-wait-time", dest="load_wait_time", type="int", default=8,
+                      help="Number of seconds to wait for page load, i.e., from opening the browser tab to begin saving page. Default: 8")
+    parser.add_option("--save-wait-time", dest="save_wait_time", type="int", default=8,
+                      help="Number of seconds to wait before closing the tab after starting to save the file. Default: 8")
 
     (options, args) = parser.parse_args()
 
+    dl.load_wait_time = options.load_wait_time
+    dl.save_wait_time = options.save_wait_time
+
     if not hasattr(options, "cmm") or not isinstance(options.cmm, (int, long)):
-        sys.stderr.write("ERROR: --community-id must be provided and should be an integer\n")
+        sys.stderr.write("ERROR: --community-id must be provided and should be an integer.\n")
         sys.exit(1)
 
     if not hasattr(options, "dest_dir") or not isinstance(options.dest_dir, (basestring)):
