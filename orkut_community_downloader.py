@@ -73,8 +73,8 @@ def dl(url, directory, suffix):
 
 def recursive_download(url, directory, cmm):
     ensure_directory(directory)
-    next_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">next[^<]*</a>'.format(ORKUT_MAIN_URL, cmm))
-    prev_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">[^ >]+ previous</a>'.format(ORKUT_MAIN_URL, cmm))
+    next_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">[^<]+&gt;</a>'.format(ORKUT_MAIN_URL, cmm))
+    prev_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">&lt;[^<]+</a>'.format(ORKUT_MAIN_URL, cmm))
     counter = 0
     newfile = None
     while True:
