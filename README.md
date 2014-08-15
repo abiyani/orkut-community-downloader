@@ -25,7 +25,7 @@ Since any modern browser renders the orkut webpage correctly, and also allows yo
 ```
 $ git clone --recursive https://github.com/abiyani/orkut-community-downloader.git  # Don't forget the --recursive flag!
 $ cd orkut-community-downloader
-$ ./orkut-community-downloader.py --community-id 125 --dest_dir ./mathematics_orkut_community
+$ ./orkut-community-downloader.py --community-id 125 --dest-dir ./mathematics_orkut_community
 ```
 
 Feel free to email [@abiyani](https://github.com/abiyani) if you have any questions regarding the usage, and open issues if you notice any bug. I tested this script (by downloading a few communities I cared about) on Ubuntu 12.04 (Python 2.7.3, Google-Chrome 36).
