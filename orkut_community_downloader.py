@@ -72,9 +72,20 @@ def dl(url, directory, suffix):
 
 
 def recursive_download(url, directory, cmm):
+    def fix_url(orig_url):
+        fixed_url = orig_url
+        if len(orig_url) > 0 and not orig_url.startswith("http"):
+            fixed_url = ORKUT_MAIN_URL + "/" + orig_url
+        return fixed_url.replace("&amp;", "&")
+
+    url = fix_url(url)
     ensure_directory(directory)
-    next_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">[^<]+&gt;</a>'.format(ORKUT_MAIN_URL, cmm))
-    prev_pattern = re.compile('<a href="({}#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">&lt;[^<]+</a>'.format(ORKUT_MAIN_URL, cmm))
+    next_pattern = re.compile('<a href="(({})?#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">[^<]+(&|&amp;)gt;</a>'.format(ORKUT_MAIN_URL, cmm))
+    prev_pattern = re.compile('<a href="(({})?#Comm\w+\?+cmm={}[^"]+)"[^>]* class="MRC">(&|&amp;)lt;[^<]+</a>'.format(ORKUT_MAIN_URL, cmm))
+    if not recursive_download.called_once:
+        sys.stderr.write("\t - next_pattern= '{}'\n\t - prev_pattern = '{}'\n".format(next_pattern.pattern, prev_pattern.pattern))
+        recursive_download.called_once = True
+
     counter = 0
     newfile = None
     while True:
@@ -113,8 +124,10 @@ def recursive_download(url, directory, cmm):
         if mnext is None:
             break
         url = mnext.groups()[0]
-
+        url = fix_url(url)
         counter += 1
+
+recursive_download.called_once = False
 
 
 # Make directory name safe for windows
@@ -235,10 +248,11 @@ def main():
 
     all_files_concatenated = "\n\n".join([read_file(pjoin(LISTING_DIR, f)) for f in get_all_files_in_dir(LISTING_DIR, ".html")])
 
-    generic_pattern = '<a class="AFB" href="({url_prefix}#Comm{{category}}\?cmm={cmm_id}&(tid=\d+|pid=\d+&pct=\d+))"[^>]*>([^<]*)</a>'.format(url_prefix=ORKUT_MAIN_URL, cmm_id=cmm)
+    generic_pattern = '<a class="AFB" href="(({url_prefix})?#Comm{{category}}\?cmm={cmm_id}(&|&amp;)(tid=\d+|pid=\d+&pct=\d+))"[^>]*>([^<]*)</a>'.format(url_prefix=ORKUT_MAIN_URL, cmm_id=cmm)
     for category, directory in {"Msgs": FORUM_DIR, "Poll": POLL_DIR}.iteritems():
-        all_pages_to_download = {group0: group3 for (group0, group1, group3) in
-                                 re.compile(generic_pattern.format(category=category)).findall(all_files_concatenated)}
+        gpc = re.compile(generic_pattern.format(category=category))
+        sys.stderr.write("\t - generic pattern for category '{}' : '{}'".format(category, gpc.pattern))
+        all_pages_to_download = {group[0]: group[-1] for group in gpc.findall(all_files_concatenated)}
         counter = 1
         sys.stderr.write("INFO: Beginning to download for category '{}'. Will save @ '{}'\n".format(category, directory))
         for url, title in all_pages_to_download.iteritems():
