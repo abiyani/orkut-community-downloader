@@ -75,7 +75,7 @@ def recursive_download(url, directory, cmm):
     def fix_url(orig_url):
         fixed_url = orig_url
         if len(orig_url) > 0 and not orig_url.startswith("http"):
-            fixed_url = ORKUT_MAIN_URL + "/" + orig_url
+            fixed_url = ORKUT_MAIN_URL + orig_url
         return fixed_url.replace("&amp;", "&")
 
     url = fix_url(url)
