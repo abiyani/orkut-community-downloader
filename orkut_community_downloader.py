@@ -26,7 +26,7 @@ prev_link_log_file = None
 ORKUT_MAIN_URL = 'http://www.orkut.com/Main'
 
 
-class LogFileCached():
+class LogFileCached:
     # Line format: <url> <file_path>
     def __init__(self, path):
         self.fd = open(path, 'a+')
